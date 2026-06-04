@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 import cors from "cors";
 const user = process.env.EMAIL_USER;
 const pass = process.env.EMAIL_PASS;
@@ -47,4 +47,6 @@ ${brief}
   }
 });
 
-app.listen(3000, () => console.log("✅ Server running"));
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => console.log("✅ Server running on port " + PORT));
