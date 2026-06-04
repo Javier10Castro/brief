@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-const express = require("express");
+import express from "express";
 const nodemailer = require("nodemailer");
-const cors = require("cors");
+import cors from "cors";
 const user = process.env.EMAIL_USER;
 const pass = process.env.EMAIL_PASS;
 
