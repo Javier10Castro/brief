@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: var(--font-sans, 'Segoe UI', sans-serif); background: var(--color-background-tertiary); color: var(--color-text-primary); min-height: 100vh; }
+
+      .app { display: flex; min-height: 100vh; }
+
+      .sidebar {
+        width: 260px;
+        min-width: 260px;
+        background: var(--color-background-primary);
+        border-right: 0.5px solid var(--color-border-tertiary);
+        padding: 1.5rem 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        flex-shrink: 0;
+      }
+
+      .sidebar-title {
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        padding: 0 1.25rem;
+        margin-bottom: 1rem;
+      }
+
+      .progress-bar {
+        height: 3px;
+        background: var(--color-background-secondary);
+        margin: 0 1.25rem 1.5rem;
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: #7F77DD;
+        border-radius: 99px;
+        transition: width 0.4s ease;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.5rem 1.25rem;
+        cursor: pointer;
+        border-radius: 0;
+        transition: background 0.15s;
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        border-left: 2px solid transparent;
+      }
+      .nav-item:hover { background: var(--color-background-secondary); }
+      .nav-item.active { color: #534AB7; border-left: 2px solid #7F77DD; background: #EEEDFE; font-weight: 500; }
+      .nav-item.completed { color: var(--color-text-success); }
+      .nav-item .nav-num {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--color-background-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .nav-item.active .nav-num { background: #7F77DD; color: white; }
+      .nav-item.completed .nav-num { background: #1D9E75; color: white; }
+
+      .main { flex: 1; padding: 2rem; max-width: 780px; margin: 0 auto; }
+
+      .section-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 0.5px solid var(--color-border-tertiary);
+      }
+      .section-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: #EEEDFE;
+        color: #534AB7;
+        padding: 3px 10px;
+        border-radius: 99px;
+        margin-bottom: 0.75rem;
+      }
+      .section-title { font-size: 22px; font-weight: 500; margin-bottom: 0.5rem; }
+      .section-desc { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 0.75rem; }
+      .section-goal {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        background: var(--color-background-secondary);
+        border-left: 2px solid #7F77DD;
+        padding: 0.75rem 1rem;
+        border-radius: 0 6px 6px 0;
+      }
+      .section-goal strong { color: var(--color-text-primary); font-weight: 500; }
+
+      .question-card {
+        background: var(--color-background-primary);
+        border: 0.5px solid var(--color-border-tertiary);
+        border-radius: var(--border-radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s;
+      }
+      .question-card:focus-within { border-color: #7F77DD; }
+
+      .question-label {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .required-badge {
+        font-size: 10px;
+        background: #FAECE7;
+        color: #993C1D;
+        padding: 2px 6px;
+        border-radius: 99px;
+        font-weight: 500;
+      }
+      .optional-badge {
+        font-size: 10px;
+        background: var(--color-background-secondary);
+        color: var(--color-text-tertiary);
+        padding: 2px 6px;
+        border-radius: 99px;
+        font-weight: 500;
+      }
+      .question-hint {
+        font-size: 12px;
+        color: var(--color-text-tertiary);
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .question-ai {
+        font-size: 11px;
+        color: #534AB7;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 0.5px solid var(--color-border-tertiary);
+        line-height: 1.5;
+      }
+
+      input[type="text"], input[type="url"], input[type="email"], select, textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 0.5px solid var(--color-border-secondary);
+        border-radius: var(--border-radius-md);
+        font-size: 14px;
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+        font-family: inherit;
+        transition: border-color 0.2s;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #7F77DD;
+        box-shadow: 0 0 0 2px #EEEDFE;
+      }
+      textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+      select { appearance: auto; }
+
+      .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 6px; }
+      .check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px 0;
+      }
+      .check-item input { width: auto; }
+
+      .scale-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .scale-group input[type="range"] { flex: 1; }
+      .scale-label { font-size: 12px; color: var(--color-text-secondary); min-width: 30px; }
+
+      .tag-input-container { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tag { 
+        background: #EEEDFE; 
+        color: #534AB7; 
+        padding: 3px 10px 3px 10px; 
+        border-radius: 99px; 
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .tag-remove { cursor: pointer; font-size: 16px; line-height: 1; color: #7F77DD; }
+      .tag-add-row { display: flex; gap: 6px; width: 100%; }
+      .tag-add-row input { flex: 1; }
+      .tag-add-btn {
+        padding: 8px 14px;
+        border: 0.5px solid var(--color-border-secondary);
+        border-radius: var(--border-radius-md);
+        background: var(--color-background-secondary);
+        cursor: pointer;
+        font-size: 13px;
+        font-family: inherit;
+        white-space: nowrap;
+        color: var(--color-text-primary);
+      }
+      .tag-add-btn:hover { background: #EEEDFE; border-color: #7F77DD; color: #534AB7; }
+
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 0.5px solid var(--color-border-tertiary);
+      }
+      .btn {
+        padding: 10px 20px;
+        border-radius: var(--border-radius-md);
+        font-size: 14px;
+        font-family: inherit;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.15s;
+        border: 0.5px solid var(--color-border-secondary);
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+      }
+      .btn:hover { background: var(--color-background-secondary); }
+      .btn-primary {
+        background: #7F77DD;
+        color: white;
+        border-color: #7F77DD;
+      }
+      .btn-primary:hover { background: #534AB7; border-color: #534AB7; }
+      .btn-success {
+        background: #1D9E75;
+        color: white;
+        border-color: #1D9E75;
+      }
+      .btn-success:hover { background: #0F6E56; }
+
+      .final-screen { padding: 2rem 0; }
+      .final-title { font-size: 22px; font-weight: 500; margin-bottom: 0.5rem; }
+      .final-subtitle { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 2rem; }
+      .prompt-box {
+        background: var(--color-background-primary);
+        border: 0.5px solid var(--color-border-tertiary);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        font-size: 13px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        color: var(--color-text-primary);
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: var(--font-mono, monospace);
+      }
+      .copy-btn {
+        margin-top: 1rem;
+        padding: 10px 20px;
+        border-radius: var(--border-radius-md);
+        font-size: 14px;
+        font-family: inherit;
+        cursor: pointer;
+        font-weight: 500;
+        background: #7F77DD;
+        color: white;
+        border: none;
+        transition: background 0.15s;
+      }
+      .copy-btn:hover { background: #534AB7; }
+
+      .coverage-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 1.5rem;
+      }
+      .coverage-card {
+        background: var(--color-background-primary);
+        border: 0.5px solid var(--color-border-tertiary);
+        border-radius: var(--border-radius-md);
+        padding: 1rem;
+        text-align: center;
+      }
+      .coverage-score {
+        font-size: 24px;
+        font-weight: 500;
+        color: #1D9E75;
+        margin-bottom: 4px;
+      }
+      .coverage-label { font-size: 12px; color: var(--color-text-secondary); }
+
+      .section-count {
+        font-size: 12px;
+        color: var(--color-text-tertiary);
+        padding: 0 1.25rem;
+        margin-bottom: 0.5rem;
+      }
+
+      @media (max-width: 640px) {
+        .sidebar { display: none; }
+        .main { padding: 1rem; }
+      }
+
+      .loader {
+        margin:40px auto;
+        width:60px;
+        height:60px;
+        border:5px solid rgba(0,0,0,0.1);
+        border-top:5px solid #7F77DD;
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="app" id="app"></div>
+
+    <script>
+      const SECTIONS = [
+        {
+          id: 1,
+          icon: "🏢",
+          title: "Información General del Negocio",
+          desc: "Recopilamos la esencia de tu empresa: quién eres, qué haces y por qué existes. Esta información es la base de toda la arquitectura de contenido, el tono de voz y la estrategia de comunicación del sitio.",
+          goal: "Objetivo estratégico: Construir la identidad narrativa del sitio web, definir el tono de voz, el copywriting de portada y las secciones de 'Quiénes somos'.",
+          questions: [
+            { id:"biz_name", label:"Nombre del negocio", hint:"Nombre comercial exacto tal como aparecerá en el sitio.", type:"text", required:true, ai:"Definirá el dominio sugerido, el título principal y todos los encabezados del sitio." },
+            { id:"biz_tagline", label:"Eslogan o tagline", hint:"Si no tienes uno, puedes dejarlo en blanco y la IA propondrá opciones.", type:"text", required:false, ai:"Se usará como subtítulo principal en la portada y en el encabezado del sitio." },
+            { id:"biz_history", label:"Historia del negocio", hint:"¿Cómo nació? ¿Cuántos años llevan operando? ¿Cuál fue el momento clave de su creación?", type:"textarea", required:true, ai:"Generará la sección 'Nuestra historia' y enriquecerá el copywriting general con autenticidad." },
+            { id:"biz_mision", label:"Misión", hint:"¿Para qué existen como empresa? ¿Qué problema resuelven en el mercado?", type:"textarea", required:true, ai:"Será el texto ancla de la sección 'Quiénes somos' y definirá el propósito comunicacional." },
+            { id:"biz_vision", label:"Visión", hint:"¿Dónde se ven en 5–10 años? ¿Qué impacto quieren generar?", type:"textarea", required:false, ai:"Se usará en secciones institucionales y para construir credibilidad a largo plazo." },
+            { id:"biz_valores", label:"Valores corporativos", hint:"Lista los 3-6 valores que guían cada decisión de la empresa.", type:"tags", required:true, ai:"Guiarán el tono del copywriting y podrán destacarse visualmente en el sitio." },
+            { id:"biz_diferenciadores", label:"¿Qué te hace diferente?", hint:"¿Por qué un cliente debería elegirte sobre la competencia? Sé específico y honesto.", type:"textarea", required:true, ai:"Se transformarán en la propuesta de valor principal, bullets de beneficios y argumentos de venta en el sitio." },
+            { id:"biz_personalidad", label:"Personalidad de marca", hint:"Selecciona las que mejor describan el carácter de tu marca.", type:"checkboxes", options:["Profesional y seria","Cercana y amigable","Innovadora y disruptiva","Tradicional y confiable","Lujosa y exclusiva","Divertida y energética","Minimalista y elegante","Técnica y especializada"], required:true, ai:"Determinará el tono del copywriting, el estilo visual y el nivel de formalidad del sitio." },
+            { id:"biz_contacto", label:"Información de contacto principal", hint:"Teléfono, email, dirección física, horarios de atención.", type:"textarea", required:true, ai:"Poblará la sección de contacto, el footer y los datos estructurados para SEO local." },
+            { id:"biz_redes", label:"Redes sociales activas", hint:"URLs completas de cada perfil activo.", type:"textarea", required:false, ai:"Se incluirán en el footer, encabezado y secciones de redes sociales del sitio." },
+          ]
+        },
+        {
+          id: 2,
+          icon: "🎯",
+          title: "Objetivos del Proyecto Web",
+          desc: "Sin objetivos claros, un sitio web es solo una tarjeta de presentación digital. Aquí definimos el propósito estratégico del proyecto para que cada decisión de diseño esté orientada a resultados.",
+          goal: "Objetivo estratégico: Diseñar la arquitectura de conversión, el flujo de usuario y las métricas de éxito que guiarán el diseño y el desarrollo.",
+          questions: [
+            { id:"obj_principal", label:"Objetivo principal del sitio web", hint:"¿Qué debe lograr principalmente este sitio?", type:"radio", options:["Generar leads calificados","Vender productos/servicios online","Informar y educar a clientes","Fortalecer imagen de marca","Captar talento/reclutamiento","Dar soporte a clientes existentes","Otro"], required:true, ai:"Definirá el CTA principal, el layout de portada y la arquitectura de navegación." },
+            { id:"obj_secundarios", label:"Objetivos secundarios", hint:"¿Qué otras metas debe cumplir el sitio, además de la principal?", type:"checkboxes", options:["Posicionamiento SEO","Construcción de comunidad","Educación del mercado","Reducir carga de soporte","Expandirse a nuevos mercados","Generar alianzas comerciales"], required:false, ai:"Se incorporarán como secciones secundarias y funcionalidades adicionales en el sitio." },
+            { id:"obj_kpis", label:"KPIs de éxito", hint:"¿Cómo medirás que el sitio está funcionando? Ejemplos: formularios enviados por mes, tasa de conversión, posición SEO, visitas mensuales.", type:"textarea", required:true, ai:"Influirá en qué elementos de tracking, formularios y CTAs se priorizarán en el diseño." },
+            { id:"obj_conversion", label:"Conversión principal deseada", hint:"¿Cuál es la acción más importante que quieres que haga un visitante?", type:"radio", options:["Llenar un formulario de contacto","Hacer una llamada telefónica","Comprar un producto","Agendar una cita/reunión","Suscribirse al newsletter","Descargar un recurso","Chatear por WhatsApp"], required:true, ai:"Determinará el diseño del CTA principal, su ubicación y la jerarquía visual de toda la portada." },
+            { id:"obj_plazo", label:"¿Cuánto tiempo para ver resultados?", hint:"¿Tienes expectativas de tiempo para lograr tus objetivos?", type:"radio", options:["1–3 meses","3–6 meses","6–12 meses","Largo plazo +1 año"], required:false, ai:"Orientará el nivel de urgencia visual, las estrategias de conversión y el alcance del proyecto SEO." },
+          ]
+        },
+        {
+          id: 3,
+          icon: "🔍",
+          title: "Situación Actual y Competencia",
+          desc: "Analizamos el punto de partida y el panorama competitivo para identificar oportunidades de diferenciación y áreas de mejora.",
+          goal: "Objetivo estratégico: Detectar oportunidades de posicionamiento, definir la estrategia de diferenciación visual y de contenido.",
+          questions: [
+            { id:"comp_sitio_actual", label:"URL de tu sitio web actual (si existe)", hint:"Si no tienes sitio web, escribe 'No tengo'.", type:"url", required:false, ai:"Se analizará la estructura actual para determinar qué conservar y qué mejorar." },
+            { id:"comp_problemas", label:"Problemas del sitio actual", hint:"¿Qué es lo que más te molesta o no funciona del sitio actual?", type:"checkboxes", options:["Diseño desactualizado","No genera leads","Lento o con problemas técnicos","No está adaptado a móvil","Difícil de actualizar","No posiciona en Google","No refleja la calidad de mi empresa","No tengo sitio web actualmente"], required:false, ai:"Priorizará las soluciones en la arquitectura del nuevo sitio y el brief de diseño." },
+            { id:"comp_directos", label:"Competidores directos (URLs)", hint:"Ingresa los sitios web de tus 3 principales competidores.", type:"textarea", required:true, ai:"Se analizarán para proponer diferenciación visual, de contenido y estratégica." },
+            { id:"comp_aspiracionales", label:"Empresas aspiracionales", hint:"¿Qué empresas, aunque no sean tu competencia directa, admiras y aspiras a parecerte?", type:"textarea", required:false, ai:"Definirán el nivel de aspiración del diseño y el tono de comunicación objetivo." },
+            { id:"comp_oportunidades", label:"Oportunidades que ves en el mercado", hint:"¿Hay algo que la competencia no está haciendo y que tú podrías hacer mejor?", type:"textarea", required:false, ai:"Se traducirán en propuestas de valor diferenciales en el copywriting del sitio." },
+          ]
+        },
+        {
+          id: 4,
+          icon: "👥",
+          title: "Público Objetivo",
+          desc: "Conocer profundamente a tu cliente ideal permite diseñar cada mensaje, cada imagen y cada llamado a la acción para que resuene emocionalmente con quienes toman la decisión de compra.",
+          goal: "Objetivo estratégico: Construir los buyer personas que guiarán el copywriting, el diseño visual, las objeciones a resolver y la estrategia de contenido.",
+          questions: [
+            { id:"pub_ideal", label:"Describe a tu cliente ideal", hint:"Edad, género, ocupación, nivel de ingresos, ubicación, nivel educativo.", type:"textarea", required:true, ai:"Construirá el perfil del buyer persona principal para adaptar todo el contenido del sitio." },
+            { id:"pub_problemas", label:"¿Qué problemas tiene tu cliente ideal que tú resuelves?", hint:"Sé específico. Los problemas reales generan conexión emocional.", type:"textarea", required:true, ai:"Se usarán como argumentos de venta en el copywriting de portada y páginas de servicios." },
+            { id:"pub_motivaciones", label:"¿Qué motiva a tu cliente a buscarte?", hint:"¿Qué situación, dolor o deseo lo llevó a buscar tu solución?", type:"textarea", required:true, ai:"Guiarán los titulares de impacto y el tono emocional del copywriting." },
+            { id:"pub_objeciones", label:"Objeciones más comunes", hint:"¿Qué razones da la gente para NO comprarte? (precio, confianza, tiempo, necesidad, etc.)", type:"textarea", required:true, ai:"Se anticiparán y resolverán en las secciones de FAQ, testimonios y propuesta de valor." },
+            { id:"pub_comportamiento", label:"¿Cómo toma decisiones tu cliente?", hint:"¿Investiga mucho antes de comprar? ¿Decide rápido? ¿Necesita hablar con alguien?", type:"radio", options:["Decide rápido, sin mucha investigación","Investiga y compara varias opciones","Necesita hablar con alguien antes de decidir","Depende de recomendaciones de terceros","Requiere múltiples puntos de contacto"], required:true, ai:"Diseñará el funnel de conversión y la cantidad de información necesaria en cada página." },
+            { id:"pub_canales", label:"¿Por qué canales encuentra tu cliente tu empresa?", hint:"Google, Instagram, referidos, LinkedIn, etc.", type:"checkboxes", options:["Google (búsqueda orgánica)","Google Ads","Instagram","Facebook","LinkedIn","YouTube","TikTok","Referidos/boca en boca","Ferias y eventos","Directorios online"], required:true, ai:"Orientará la estrategia SEO, los CTAs y las integraciones de redes sociales." },
+          ]
+        },
+        {
+          id: 5,
+          icon: "🎨",
+          title: "Branding e Identidad Visual",
+          desc: "El diseño visual no es decoración, es comunicación estratégica. Aquí definimos el lenguaje visual que transmitirá los valores y la personalidad de tu marca.",
+          goal: "Objetivo estratégico: Generar el brief visual completo para el diseño del sitio: paleta, tipografías, estilo gráfico y directrices de imagen.",
+          questions: [
+            { id:"brand_logo", label:"¿Tienes logotipo?", hint:"Si tienes, descríbelo. Colores, formas, tipografía que usa.", type:"radio", options:["Sí, tengo logotipo definido","Tengo uno pero necesita actualización","No tengo logotipo aún"], required:true, ai:"Determinará si el sistema de diseño parte del logo existente o se diseña desde cero." },
+            { id:"brand_colores", label:"Paleta de colores actual o deseada", hint:"¿Tienes colores de marca? ¿Cuáles son los colores HEX o los colores que te gustan?", type:"textarea", required:false, ai:"Será la base de la paleta cromática del sitio. Si no hay paleta, la IA generará una basada en la personalidad." },
+            { id:"brand_tipografia", label:"Tipografías actuales o preferencias", hint:"¿Usas alguna tipografía específica? ¿Prefieres letras modernas, clásicas, manuscritas?", type:"textarea", required:false, ai:"Definirá el sistema tipográfico del sitio: titulares, cuerpo y UI." },
+            { id:"brand_estilo", label:"Estilo visual deseado", hint:"Selecciona el estilo que mejor representa cómo quieres que se vea tu sitio.", type:"checkboxes", options:["Minimalista y limpio","Corporativo y formal","Moderno y tecnológico","Cálido y humano","Lujoso y premium","Colorido y vibrante","Oscuro y sofisticado","Ilustrativo y creativo","Fotográfico e inmersivo"], required:true, ai:"Definirá el estilo visual maestro: espaciado, densidad visual, uso de imágenes y elementos gráficos." },
+            { id:"brand_emociones", label:"¿Qué emociones debe transmitir tu sitio?", hint:"¿Qué debe sentir un visitante al navegar tu sitio web?", type:"checkboxes", options:["Confianza y seguridad","Innovación y modernidad","Calidad y excelencia","Cercanía y calidez","Exclusividad y prestigio","Energía y motivación","Tranquilidad y bienestar","Profesionalismo y seriedad"], required:true, ai:"Guiarán las decisiones de color, imagen, espaciado y animaciones del diseño." },
+            { id:"brand_prohibido", label:"¿Qué elementos visuales JAMÁS deben aparecer?", hint:"Colores que detestas, estilos que odias, referencias que no representan tu marca.", type:"textarea", required:false, ai:"Se incluirán como restricciones explícitas en el brief de diseño visual." },
+            { id:"brand_nivel", label:"Nivel de sofisticación visual deseado", hint:"1 = muy simple, 5 = altamente elaborado y detallado.", type:"scale", min:1, max:5, required:true, ai:"Calibrará la complejidad del diseño: animaciones, efectos, capas visuales y detalles." },
+          ]
+        },
+        {
+          id: 6,
+          icon: "🗺️",
+          title: "Arquitectura del Sitio",
+          desc: "La estructura del sitio determina cómo fluye la información y cómo los usuarios navegan hacia la conversión. Aquí definimos las páginas, la jerarquía y el flujo.",
+          goal: "Objetivo estratégico: Generar el sitemap completo, la jerarquía de navegación y el flujo de usuario óptimo para la conversión.",
+          questions: [
+            { id:"arq_paginas", label:"Páginas que necesitas en el sitio", hint:"Marca todas las páginas que deberían existir.", type:"checkboxes", options:["Portada/Inicio","Quiénes somos","Servicios (página general)","Páginas individuales por servicio","Portafolio/Casos de éxito","Testimonios","Blog/Recursos","Preguntas frecuentes","Precios/Tarifas","Contacto","Página de gracias (Thank you page)","Política de privacidad","Términos y condiciones","Página 404 personalizada"], required:true, ai:"Generará el sitemap completo y la estructura de navegación del sitio." },
+            { id:"arq_paginas_extra", label:"¿Necesitas páginas especiales no listadas?", hint:"Ejemplos: calculadora de presupuesto, página de afiliados, área de clientes, etc.", type:"textarea", required:false, ai:"Se agregarán al sitemap y se diseñarán las wireframes correspondientes." },
+            { id:"arq_prioridad", label:"¿Cuáles son las 3 páginas más importantes?", hint:"En orden de importancia para el negocio.", type:"textarea", required:true, ai:"Recibirán mayor atención en el diseño, el copywriting y la optimización de conversión." },
+            { id:"arq_flujo", label:"Flujo ideal del visitante", hint:"¿Cómo quieres que un visitante navegue desde que llega hasta que convierte? Ej: Inicio → Servicios → Contacto.", type:"textarea", required:true, ai:"Diseñará los CTAs internos, la navegación y los enlaces entre secciones para guiar al usuario." },
+          ]
+        },
+        {
+          id: 7,
+          icon: "📝",
+          title: "Contenido Disponible",
+          desc: "Inventariamos los materiales existentes para saber con qué contamos y qué necesita generar la IA o producir el equipo.",
+          goal: "Objetivo estratégico: Determinar qué contenido debe generarse desde cero y qué puede adaptarse de materiales existentes.",
+          questions: [
+            { id:"cont_textos", label:"¿Tienes textos redactados actualmente?", hint:"Textos del sitio anterior, presentaciones, folletos, propuestas comerciales.", type:"radio", options:["Sí, tengo textos completos","Tengo algunos textos parciales","Solo tengo ideas y notas","No tengo nada escrito"], required:true, ai:"Determinará la cantidad de copywriting que debe generar la IA versus adaptar de existentes." },
+            { id:"cont_fotos", label:"¿Tienes fotografías profesionales?", hint:"Fotos de las instalaciones, el equipo, los productos o servicios.", type:"radio", options:["Sí, tengo banco de fotos profesional","Tengo algunas fotos básicas","Solo tengo fotos de teléfono","No tengo fotografías"], required:true, ai:"Definirá si el diseño usará fotografía real o stock premium y el nivel de producción visual." },
+            { id:"cont_videos", label:"¿Tienes material en video?", hint:"Videos corporativos, tutoriales, presentaciones, testimonios grabados.", type:"radio", options:["Sí, tengo videos profesionales","Tengo videos básicos/caseros","No tengo videos pero estoy dispuesto a producir","No quiero usar videos"], required:false, ai:"Determinará si se diseñan secciones de video hero, galerías o se usan placeholders animados." },
+            { id:"cont_recursos", label:"Recursos descargables disponibles", hint:"Guías, PDFs, catálogos, presentaciones, plantillas que puedas ofrecer en el sitio.", type:"textarea", required:false, ai:"Se diseñarán secciones de lead magnets y descargas para captación de emails." },
+          ]
+        },
+        {
+          id: 8,
+          icon: "📦",
+          title: "Productos y Servicios",
+          desc: "Detallamos cada oferta para que el sitio presente cada producto o servicio de forma estratégica, clara y orientada a la conversión.",
+          goal: "Objetivo estratégico: Generar las páginas individuales de servicios/productos con copywriting optimizado para conversión.",
+          questions: [
+            { id:"serv_lista", label:"Lista tus productos o servicios principales", hint:"Nombra cada uno. Puedes listar hasta 10.", type:"textarea", required:true, ai:"Creará una página por servicio con estructura, copywriting y CTA específico para cada uno." },
+            { id:"serv_estrella", label:"¿Cuál es tu servicio/producto estrella?", hint:"El que más vende, el más rentable o el que más quieres promover.", type:"text", required:true, ai:"Recibirá tratamiento visual prioritario en portada, navegación y llamados a la acción." },
+            { id:"serv_beneficios", label:"Principales beneficios de tus servicios", hint:"No características técnicas, sino los beneficios tangibles que recibe el cliente.", type:"textarea", required:true, ai:"Construirán las secciones de beneficios, bullets de conversión y propuestas de valor por servicio." },
+            { id:"serv_proceso", label:"¿Cómo es tu proceso de trabajo?", hint:"Describe los pasos que sigue un cliente desde que te contacta hasta que recibe el servicio.", type:"textarea", required:false, ai:"Generará la sección 'Cómo trabajamos' con el proceso visual paso a paso." },
+            { id:"serv_precio", label:"¿Mostrarás precios en el sitio?", hint:"¿Cuál es tu estrategia respecto a mostrar precios públicamente?", type:"radio", options:["Sí, precios fijos visibles","Precios desde/desde","Precios a consultar","No se mostrarán precios"], required:true, ai:"Diseñará las páginas de precios o el flujo de cotización según la estrategia elegida." },
+          ]
+        },
+        {
+          id: 9,
+          icon: "⭐",
+          title: "Prueba Social y Credibilidad",
+          desc: "La confianza se construye con evidencia. Aquí recopilamos todos los elementos que demuestran que tu empresa cumple lo que promete.",
+          goal: "Objetivo estratégico: Diseñar las secciones de credibilidad que reduzcan el riesgo percibido y aceleren la decisión de compra.",
+          questions: [
+            { id:"social_testimonios", label:"Testimonios de clientes", hint:"Incluye nombre, empresa, cargo y el testimonio exacto. Al menos 3.", type:"textarea", required:false, ai:"Se diseñarán como sección de testimonios con fotos (o avatares), nombres y citas destacadas." },
+            { id:"social_numeros", label:"Estadísticas relevantes de tu empresa", hint:"Años en el mercado, clientes atendidos, proyectos completados, países, etc.", type:"textarea", required:false, ai:"Crearán la sección de métricas de impacto con contadores animados." },
+            { id:"social_clientes", label:"Clientes o marcas importantes que puedas mencionar", hint:"Logotipos de empresas con las que hayas trabajado (si tienes permiso).", type:"textarea", required:false, ai:"Se diseñará una sección de logos de clientes para construir autoridad y confianza." },
+            { id:"social_cert", label:"Certificaciones, premios o reconocimientos", hint:"Cualquier credencial que avale tu expertise.", type:"textarea", required:false, ai:"Se incluirán como badges de credibilidad en páginas clave." },
+            { id:"social_casos", label:"¿Tienes casos de éxito documentados?", hint:"Historias de clientes con antes/después, resultados medibles, contexto.", type:"radio", options:["Sí, tengo casos documentados con resultados","Tengo historias pero sin métricas","No tengo pero estoy dispuesto a crearlos","No tengo casos de éxito"], required:true, ai:"Diseñará una sección de portafolio/casos de éxito con el nivel de detalle disponible." },
+          ]
+        },
+        {
+          id: 10,
+          icon: "⚙️",
+          title: "Funcionalidades Requeridas",
+          desc: "Definimos las capacidades técnicas del sitio para que la arquitectura y el desarrollo estén alineados con tus necesidades operativas.",
+          goal: "Objetivo estratégico: Generar el listado de requerimientos técnicos, integraciones y el stack tecnológico recomendado.",
+          questions: [
+            { id:"func_basicas", label:"Funcionalidades básicas requeridas", hint:"Selecciona todas las que necesitas.", type:"checkboxes", options:["Formulario de contacto","Chat en vivo","WhatsApp flotante","Newsletter/Suscripción","Blog/Noticias","Búsqueda interna","Mapa de Google","Galería de imágenes","Galería de videos"], required:true, ai:"Generará el listado de componentes y módulos a desarrollar." },
+            { id:"func_avanzadas", label:"Funcionalidades avanzadas", hint:"Selecciona las que aplican a tu negocio.", type:"checkboxes", options:["E-commerce (tienda online)","Sistema de reservas/citas","Área de clientes/Login","Membresías o suscripciones","Pasarela de pago","Portal de afiliados","Múltiples idiomas","Integración con CRM","Automatizaciones de email"], required:false, ai:"Definirá la complejidad técnica del proyecto y las integraciones necesarias." },
+            { id:"func_crm", label:"¿Qué herramientas usas actualmente?", hint:"CRM, email marketing, facturación, etc. Ejemplos: HubSpot, Mailchimp, Salesforce, Stripe.", type:"textarea", required:false, ai:"Diseñará las integraciones necesarias con las herramientas existentes en tu stack." },
+            { id:"func_cms", label:"¿Quién actualizará el contenido del sitio?", hint:"¿Lo harán internamente o necesitan ayuda externa?", type:"radio", options:["Yo mismo / equipo interno","Agencia o freelancer externo","No necesito actualizar contenido seguido"], required:true, ai:"Determinará el CMS recomendado y el nivel de acceso al panel de administración." },
+          ]
+        },
+        {
+          id: 11,
+          icon: "🔎",
+          title: "Estrategia SEO",
+          desc: "El posicionamiento en buscadores es una inversión a largo plazo. Aquí definimos la estrategia de palabras clave y geolocalización para construir autoridad orgánica.",
+          goal: "Objetivo estratégico: Generar la estrategia de palabras clave, la estructura de URLs, los metadatos y el SEO técnico inicial del sitio.",
+          questions: [
+            { id:"seo_keywords", label:"Palabras clave principales", hint:"¿Qué buscaría en Google alguien que necesita tus servicios? Lista las más importantes.", type:"tags", required:true, ai:"Construirán la estructura de URLs, los títulos de página, los H1 y los metadescriptions." },
+            { id:"seo_geo", label:"Ubicaciones geográficas objetivo", hint:"¿En qué ciudades, regiones o países quieres posicionarte?", type:"tags", required:true, ai:"Generará las páginas de aterrizaje locales y la estrategia de SEO geolocalizado." },
+            { id:"seo_competencia", label:"¿Tus competidores aparecen bien en Google?", hint:"¿Cuándo buscas tus servicios en Google, quién aparece primero? ¿Ellos invierten en SEO?", type:"textarea", required:false, ai:"Calibrará el nivel de esfuerzo y el tiempo estimado para alcanzar posiciones relevantes." },
+            { id:"seo_estrategia", label:"¿Tienes estrategia de contenidos?", hint:"¿Publicas artículos, guías o recursos para atraer visitas orgánicas?", type:"radio", options:["Sí, tengo blog activo con publicaciones frecuentes","Lo hice en el pasado pero no de forma constante","Me gustaría empezar","No me interesa el blog"], required:false, ai:"Diseñará la estructura del blog, las categorías y el calendario editorial inicial." },
+          ]
+        },
+        {
+          id: 12,
+          icon: "💡",
+          title: "Referencias Visuales",
+          desc: "Las referencias son el lenguaje más rápido entre cliente y diseñador. Aquí identificamos qué te gusta y qué te desagrada para evitar iteraciones innecesarias.",
+          goal: "Objetivo estratégico: Construir el moodboard digital, el brief estético y las restricciones de diseño explícitas.",
+          questions: [
+            { id:"ref_favoritos", label:"Sitios web que te gustan", hint:"URLs de sitios que admiras por su diseño, experiencia o contenido. Explica qué te gusta de cada uno.", type:"textarea", required:true, ai:"Identificarán patrones visuales, estructuras y elementos que deben inspirar el diseño." },
+            { id:"ref_odio", label:"Sitios web que detestas", hint:"URLs de sitios que no te gustan. Explica qué es lo que no funciona para ti.", type:"textarea", required:false, ai:"Se convertirán en restricciones de diseño explícitas para evitar patrones no deseados." },
+            { id:"ref_marcas", label:"¿Qué marcas globales representan mejor tu visión?", hint:"No necesitan ser de tu industria. Pueden ser Apple, Tesla, Zara, Rolex, etc.", type:"textarea", required:true, ai:"Calibrarán el nivel de aspiración del diseño y el posicionamiento visual de la marca." },
+            { id:"ref_palabras", label:"Tres palabras que deben definir el diseño", hint:"Ejemplos: moderno, cálido, audaz / minimalista, elegante, fresco.", type:"text", required:true, ai:"Serán las directrices creativas maestras para toda decisión de diseño." },
+          ]
+        },
+        {
+          id: 13,
+          icon: "🚀",
+          title: "Estrategia de Conversión",
+          desc: "El sitio más bonito del mundo no sirve si no convierte visitantes en clientes. Aquí diseñamos el sistema de captación y persuasión.",
+          goal: "Objetivo estratégico: Diseñar el embudo de conversión, los CTAs, los lead magnets y la estrategia de seguimiento post-visita.",
+          questions: [
+            { id:"conv_cta_principal", label:"Texto del CTA principal", hint:"¿Qué frase quieres que diga el botón más importante del sitio?", type:"text", required:true, ai:"Se usará en el hero de portada, el header y las posiciones clave de conversión." },
+            { id:"conv_oferta", label:"¿Tienes alguna oferta, garantía o incentivo especial?", hint:"Consulta gratuita, garantía de satisfacción, primera sesión gratis, descuento especial, etc.", type:"textarea", required:false, ai:"Será el argumento de conversión más poderoso y se destacará visualmente en el sitio." },
+            { id:"conv_lead", label:"¿Qué ofrecerías a cambio del email de un visitante?", hint:"Guía gratuita, webinar, descuento, consulta, herramienta, checklist, etc.", type:"textarea", required:false, ai:"Diseñará la sección de lead magnet y el flujo de captación de contactos." },
+            { id:"conv_urgencia", label:"¿Puedes generar urgencia o escasez?", hint:"Plazas limitadas, precio por tiempo limitado, cupos disponibles, etc.", type:"textarea", required:false, ai:"Incorporará elementos de urgencia estratégica sin generar presión artificial." },
+            { id:"conv_seguimiento", label:"¿Tienes estrategia de seguimiento post-contacto?", hint:"¿Qué pasa después de que alguien llena el formulario? ¿Hay email automático, llamada, secuencia?", type:"textarea", required:false, ai:"Diseñará la página de confirmación (thank you page) y los mensajes de seguimiento automático." },
+          ]
+        },
+        {
+          id: 14,
+          icon: "🤖",
+          title: "Instrucciones para Inteligencia Artificial",
+          desc: "Estas preguntas de perspectiva van más allá de lo convencional. Sus respuestas permiten a la IA capturar la esencia intangible de tu marca y tomar mejores decisiones creativas.",
+          goal: "Objetivo estratégico: Generar el prompt maestro con el ADN de la marca para que la IA pueda diseñar, redactar y crear con máxima alineación.",
+          questions: [
+            { id:"ai_persona", label:"Si tu marca fuera una persona, ¿cómo sería?", hint:"Describe su edad, forma de vestir, cómo habla, dónde vive, qué lee, qué hace los fines de semana.", type:"textarea", required:true, ai:"Construirá la voz de marca completa: tono, vocabulario, nivel de formalidad y estilo narrativo." },
+            { id:"ai_5seg", label:"¿Qué debe sentir un visitante en los primeros 5 segundos?", hint:"La primera impresión es irreversible. ¿Qué emoción o pensamiento debe generar tu sitio al instante?", type:"text", required:true, ai:"Dictará el diseño del hero: imagen, titular, subtítulo, colores y jerarquía visual de portada." },
+            { id:"ai_diferencia", label:"¿Qué hace que tu empresa sea única de verdad?", hint:"No el discurso comercial, sino la verdad profunda. ¿Qué harías distinto aunque nadie te lo pidiera?", type:"textarea", required:true, ai:"Será el núcleo de la propuesta de valor única que permeará todo el copywriting del sitio." },
+            { id:"ai_prohibido", label:"¿Qué elementos visuales JAMÁS deben aparecer?", hint:"Colores, formas, estilos, referencias culturales, imágenes que no representan tu marca.", type:"textarea", required:false, ai:"Se codificarán como restricciones absolutas en el sistema de diseño." },
+            { id:"ai_referente", label:"¿Si tu sitio web fuera una película, cuál sería?", hint:"O un libro, una canción, un lugar. Una metáfora que capture la esencia visual y emocional que buscas.", type:"text", required:false, ai:"Construirá la referencia cultural para el moodboard, el estilo fotográfico y la paleta emocional." },
+            { id:"ai_extra", label:"¿Hay algo más que debería saber para crear el sitio perfecto?", hint:"Contexto especial, restricciones, oportunidades, intuiciones. Todo cuenta.", type:"textarea", required:false, ai:"Se incorporará como contexto adicional enriquecido en el prompt maestro de generación." },
+          ]
+        }
+      ];
+
+      let currentSection = 0;
+      let formData = {};
+      let tagInputs = {};
+
+      function getProgress() {
+        let filled = 0, total = 0;
+        SECTIONS.forEach(s => s.questions.forEach(q => {
+          total++;
+          const v = formData[q.id];
+          if (v && ((typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length > 0) || typeof v === 'number')) filled++;
+        }));
+        return Math.round((filled / total) * 100);
+      }
+
+      function isSectionComplete(sIdx) {
+        return SECTIONS[sIdx].questions.filter(q => q.required).every(q => {
+          const v = formData[q.id];
+          return v && ((typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length > 0) || typeof v === 'number');
+        });
+      }
+
+      function generatePrompt() {
+        const d = formData;
+        let prompt = `# PROMPT MAESTRO PARA GENERACIÓN DE SITIO WEB PROFESIONAL\n\n`;
+        prompt += `## DATOS DEL NEGOCIO\n`;
+        prompt += `- **Empresa:** ${d.biz_name||'N/A'}\n`;
+        prompt += `- **Eslogan:** ${d.biz_tagline||'N/A'}\n`;
+        prompt += `- **Misión:** ${d.biz_mision||'N/A'}\n`;
+        prompt += `- **Diferenciadores:** ${d.biz_diferenciadores||'N/A'}\n`;
+        prompt += `- **Personalidad de marca:** ${Array.isArray(d.biz_personalidad) ? d.biz_personalidad.join(', ') : 'N/A'}\n\n`;
+        prompt += `## OBJETIVO DEL SITIO\n`;
+        prompt += `- **Objetivo principal:** ${d.obj_principal||'N/A'}\n`;
+        prompt += `- **Conversión deseada:** ${d.obj_conversion||'N/A'}\n`;
+        prompt += `- **KPIs:** ${d.obj_kpis||'N/A'}\n\n`;
+        prompt += `## PÚBLICO OBJETIVO\n`;
+        prompt += `- **Cliente ideal:** ${d.pub_ideal||'N/A'}\n`;
+        prompt += `- **Problemas que resuelve:** ${d.pub_problemas||'N/A'}\n`;
+        prompt += `- **Objeciones principales:** ${d.pub_objeciones||'N/A'}\n\n`;
+        prompt += `## IDENTIDAD VISUAL\n`;
+        prompt += `- **Colores:** ${d.brand_colores||'Generar paleta basada en personalidad'}\n`;
+        prompt += `- **Estilo visual:** ${Array.isArray(d.brand_estilo) ? d.brand_estilo.join(', ') : 'N/A'}\n`;
+        prompt += `- **Emociones a transmitir:** ${Array.isArray(d.brand_emociones) ? d.brand_emociones.join(', ') : 'N/A'}\n`;
+        prompt += `- **Nivel de sofisticación:** ${d.brand_nivel||'3'}/5\n`;
+        prompt += `- **Elementos prohibidos:** ${d.brand_prohibido||'Ninguno especificado'}\n\n`;
+        prompt += `## ARQUITECTURA DEL SITIO\n`;
+        prompt += `- **Páginas requeridas:** ${Array.isArray(d.arq_paginas) ? d.arq_paginas.join(', ') : 'N/A'}\n`;
+        prompt += `- **Páginas prioritarias:** ${d.arq_prioridad||'N/A'}\n`;
+        prompt += `- **Flujo de usuario:** ${d.arq_flujo||'N/A'}\n\n`;
+        prompt += `## SERVICIOS Y PRODUCTOS\n`;
+        prompt += `- **Oferta principal:** ${d.serv_lista||'N/A'}\n`;
+        prompt += `- **Servicio estrella:** ${d.serv_estrella||'N/A'}\n`;
+        prompt += `- **Beneficios clave:** ${d.serv_beneficios||'N/A'}\n\n`;
+        prompt += `## SEO Y POSICIONAMIENTO\n`;
+        prompt += `- **Palabras clave:** ${Array.isArray(d.seo_keywords) ? d.seo_keywords.join(', ') : 'N/A'}\n`;
+        prompt += `- **Ubicaciones:** ${Array.isArray(d.seo_geo) ? d.seo_geo.join(', ') : 'N/A'}\n\n`;
+        prompt += `## CONVERSIÓN\n`;
+        prompt += `- **CTA principal:** ${d.conv_cta_principal||'N/A'}\n`;
+        prompt += `- **Oferta/Incentivo:** ${d.conv_oferta||'Sin oferta especial'}\n`;
+        prompt += `- **Lead magnet:** ${d.conv_lead||'Sin lead magnet definido'}\n\n`;
+        prompt += `## BRIEF CREATIVO PARA IA\n`;
+        prompt += `- **Personalidad de marca (metáfora):** ${d.ai_persona||'N/A'}\n`;
+        prompt += `- **Primera impresión (5 segundos):** ${d.ai_5seg||'N/A'}\n`;
+        prompt += `- **Diferenciador real:** ${d.ai_diferencia||'N/A'}\n`;
+        prompt += `- **Referencias visuales favoritas:** ${d.ref_favoritos||'N/A'}\n`;
+        prompt += `- **Tres palabras del diseño:** ${d.ref_palabras||'N/A'}\n`;
+        prompt += `- **Referente cultural:** ${d.ai_referente||'N/A'}\n\n`;
+        prompt += `---\n\nCon toda la información anterior, genera un sitio web completo que incluya:\n1. Arquitectura de información con sitemap detallado\n2. Wireframes en texto de cada página\n3. Copywriting completo para todas las secciones\n4. Sistema de diseño: paleta, tipografías, componentes\n5. Estrategia de conversión implementada\n6. Metadatos SEO para cada página\n7. Código HTML/CSS/JS del sitio completo\n\nEl sitio debe reflejar perfectamente la esencia de la marca y estar optimizado para convertir visitantes en clientes.`;
+        return prompt;
+      }
+
+      function renderTagInput(q) {
+        if (!formData[q.id]) formData[q.id] = [];
+        if (!tagInputs[q.id]) tagInputs[q.id] = '';
+        const tags = formData[q.id];
+        return `
+          <div class="tag-input-container" id="tags-${q.id}">
+            ${tags.map((t,i) => `<span class="tag">${t}<span class="tag-remove" onclick="removeTag('${q.id}',${i})">×</span></span>`).join('')}
+          </div>
+          <div class="tag-add-row" style="margin-top:8px;">
+            <input type="text" id="tag-input-${q.id}" placeholder="Escribe y presiona Agregar..." value="${tagInputs[q.id]||''}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTag('${q.id}')}" oninput="tagInputs['${q.id}']=this.value">
+            <button class="tag-add-btn" onclick="addTag('${q.id}')">+ Agregar</button>
+          </div>
+        `;
+      }
+
+      function addTag(qid) {
+        const input = document.getElementById('tag-input-'+qid);
+        const val = input.value.trim();
+        if (!val) return;
+        if (!formData[qid]) formData[qid] = [];
+        formData[qid].push(val);
+        tagInputs[qid] = '';
+        input.value = '';
+        render();
+      }
+
+      function removeTag(qid, idx) {
+        formData[qid].splice(idx,1);
+        render();
+      }
+
+      function renderQuestion(q) {
+        const val = formData[q.id];
+        let input = '';
+        if (q.type === 'text' || q.type === 'url' || q.type === 'email') {
+          input = `<input type="${q.type}" id="${q.id}" value="${val||''}" oninput="formData['${q.id}']=this.value" placeholder="">`;
+        } else if (q.type === 'textarea') {
+          input = `<textarea id="${q.id}" oninput="formData['${q.id}']=this.value" rows="3">${val||''}</textarea>`;
+        } else if (q.type === 'radio') {
+          input = `<div class="radio-group">${q.options.map(o => `
+            <label class="check-item">
+              <input type="radio" name="${q.id}" value="${o}" ${val===o?'checked':''} onchange="formData['${q.id}']=this.value;render()">
+              ${o}
+            </label>`).join('')}</div>`;
+        } else if (q.type === 'checkboxes') {
+          const arr = Array.isArray(val) ? val : [];
+          input = `<div class="checkbox-group">${q.options.map(o => `
+            <label class="check-item">
+              <input type="checkbox" value="${o}" ${arr.includes(o)?'checked':''} onchange="
+                var arr=formData['${q.id}']||[];
+                if(this.checked)arr.push(this.value);else arr=arr.filter(x=>x!==this.value);
+                formData['${q.id}']=arr;render();">
+              ${o}
+            </label>`).join('')}</div>`;
+        } else if (q.type === 'scale') {
+          const v = val || 3;
+          input = `<div class="scale-group">
+            <span class="scale-label">Simple</span>
+            <input type="range" min="${q.min}" max="${q.max}" step="1" value="${v}" oninput="formData['${q.id}']=parseInt(this.value);document.getElementById('scale-out-${q.id}').textContent=this.value">
+            <span class="scale-label">Elaborado</span>
+            <span style="font-size:16px;font-weight:500;min-width:20px;text-align:center;color:#7F77DD" id="scale-out-${q.id}">${v}</span>
+          </div>`;
+        } else if (q.type === 'tags') {
+          input = renderTagInput(q);
+        }
+        return `
+          <div class="question-card">
+            <div class="question-label">
+              ${q.label}
+              ${q.required ? '<span class="required-badge">Requerido</span>' : '<span class="optional-badge">Opcional</span>'}
+            </div>
+            <div class="question-hint">${q.hint}</div>
+            ${input}
+            <div class="question-ai">🤖 <strong>Uso por IA:</strong> ${q.ai}</div>
+          </div>`;
+      }
+
+      function renderSidebar() {
+        const progress = getProgress();
+        return `
+          <div class="sidebar">
+            <div class="sidebar-title">Formulario de Descubrimiento</div>
+            <div class="section-count">${progress}% completado</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+            ${SECTIONS.map((s,i) => `
+              <div class="nav-item ${i===currentSection?'active':''} ${isSectionComplete(i)?'completed':''}" onclick="goTo(${i})">
+                <span class="nav-num">${isSectionComplete(i)?'✓':s.id}</span>
+                <span>${s.title}</span>
+              </div>
+            `).join('')}
+            <div class="nav-item ${currentSection===SECTIONS.length?'active':''}" onclick="goTo(${SECTIONS.length})" style="margin-top:8px;border-top:0.5px solid var(--color-border-tertiary);padding-top:12px;">
+              <span class="nav-num" style="background:#1D9E75;color:white;">→</span>
+              <span style="color:#0F6E56;font-weight:500;">Generar Prompt IA</span>
+            </div>
+          </div>`;
+      }
+
+      function renderSection() {
+        const s = SECTIONS[currentSection];
+        return `
+          <div class="main">
+            <div class="section-header">
+              <div class="section-badge">Sección ${s.id} de ${SECTIONS.length}</div>
+              <div class="section-title">${s.icon} ${s.title}</div>
+              <div class="section-desc">${s.desc}</div>
+              <div class="section-goal"><strong>🎯 Objetivo estratégico:</strong> ${s.goal}</div>
+            </div>
+            ${s.questions.map(q => renderQuestion(q)).join('')}
+            <div class="nav-buttons">
+              ${currentSection > 0 ? `<button class="btn" onclick="prev()">← Anterior</button>` : '<div></div>'}
+              ${currentSection < SECTIONS.length-1
+                ? `<button class="btn btn-primary" onclick="next()">Siguiente →</button>`
+                : `<button class="btn btn-success" onclick="goTo(${SECTIONS.length})">✨ Generar Prompt IA</button>`}
+            </div>
+          </div>`;
+      }
+
+      function renderFinal() {
+        const prompt = generatePrompt();
+        const progress = getProgress();
+        const areas = ["Diseño","UX","Conversión","Branding","SEO","Desarrollo"];
+        return `
+          <div class="main">
+            <div class="final-screen">
+              <div class="section-badge">Formulario completado</div>
+              <div class="final-title">🎉 Prompt Maestro Generado</div>
+              <div class="final-subtitle">Tu formulario está ${progress}% completo. Este prompt contiene toda la información para que Claude genere tu sitio web profesional.</div>
+              
+              <div class="coverage-grid">
+                ${areas.map(a => `
+                  <div class="coverage-card">
+                    <div class="coverage-score">${progress >= 70 ? '✅' : progress >= 40 ? '⚠️' : '❌'}</div>
+                    <div class="coverage-label">${a}</div>
+                  </div>`).join('')}
+              </div>
+
+              <div style="margin-top:1.5rem;margin-bottom:0.5rem;font-size:14px;font-weight:500;">Prompt para Claude</div>
+              <div class="prompt-box">${prompt}</div>
+              <button class="copy-btn" onclick="
+                navigator.clipboard.writeText(document.querySelector('.prompt-box').textContent).then(()=>{
+                  this.textContent='✓ Copiado al portapapeles';
+                  setTimeout(()=>this.textContent='Copiar prompt',2000);
+                })
+              ">Copiar prompt</button>
+
+              <div style="margin-top:2rem;padding-top:1.5rem;border-top:0.5px solid var(--color-border-tertiary);">
+                <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">¿Qué hacer ahora?</div>
+                <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;">
+                  1. Copia el prompt completo con el botón de arriba<br>
+                  2. Abre una nueva conversación con Claude<br>
+                  3. Pega el prompt y presiona enviar<br>
+                  4. Claude generará la arquitectura, el diseño y el contenido completo de tu sitio<br>
+                  5. Itera con Claude hasta que el resultado sea exactamente lo que necesitas
+                </div>
+              </div>
+
+              <div class="nav-buttons">
+                <button class="btn" onclick="goTo(${SECTIONS.length-1})">← Revisar respuestas</button>
+                <button class="btn btn-success" onclick="showFinalForm()">🚀 Enviar Brief</button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function render() {
+        document.getElementById('app').innerHTML = `
+          ${renderSidebar()}
+          ${currentSection < SECTIONS.length ? renderSection() : renderFinal()}
+        `;
+      }
+
+      function goTo(idx) { currentSection = idx; render(); window.scrollTo(0,0); }
+      function next() { if(currentSection < SECTIONS.length) { currentSection++; render(); window.scrollTo(0,0); } }
+      function prev() { if(currentSection > 0) { currentSection--; render(); window.scrollTo(0,0); } }
+
+      render();
+
+      /* ===========================
+        🚀 FINAL REAL DEL SISTEMA
+      =========================== */
+
+      function showFinalForm(){
+        document.getElementById('app').innerHTML = `
+          <div style="max-width:500px;margin:100px auto;text-align:center">
+
+            <h2>Finaliza tu brief 🚀</h2>
+
+            <input type="text" id="user-name" placeholder="Tu nombre"
+              style="margin-bottom:12px;width:100%;padding:12px">
+
+            <input type="email" id="user-email" placeholder="Tu correo"
+              style="margin-bottom:20px;width:100%;padding:12px">
+
+            <button onclick="finalSubmit()" class="btn btn-success">
+              🚀 Enviar
+            </button>
+
+          </div>
+        `;
+      }
+
+      async function finalSubmit(){
+        const name = document.getElementById('user-name').value;
+        const email = document.getElementById('user-email').value;
+        const prompt = generatePrompt();
+
+        try{
+          await fetch("http://localhost:3000/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              brief: prompt
+            })
+          });
+
+          console.log("✅ enviado");
+
+        }catch(e){
+          console.error("❌ error:", e);
+        }
+
+        generatePDF(prompt, name);
+
+        document.getElementById('app').innerHTML = `
+          <div style="text-align:center;margin-top:120px">
+            <h1>🎉 ¡Gracias ${name}!</h1>
+            <p>Tu brief fue enviado correctamente.</p>
+            <div class="loader"></div>
+          </div>
+        `;
+      }
+
+      function generatePDF(content, name){
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const lines = doc.splitTextToSize(content, 180);
+
+        doc.text("Brief Maestro", 10, 10);
+        doc.text("Cliente: " + name, 10, 18);
+        doc.text(lines, 10, 30);
+
+        doc.save("brief-"+name+".pdf");
+      } 
+    </script>
+  </body>
+</html>
